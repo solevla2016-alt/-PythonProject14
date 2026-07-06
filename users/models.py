@@ -4,6 +4,7 @@ from django.contrib.auth.models import (
     PermissionsMixin,
     BaseUserManager,
 )
+from lms.models import Course, Lesson
 
 
 class UserManager(BaseUserManager):
@@ -72,4 +73,55 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return self.email
+
+class Payment(models.Model):
+    CASH = "cash"
+    TRANSFER = "transfer"
+
+    PAYMENT_METHODS = [
+        (CASH, "Наличные"),
+        (TRANSFER, "Перевод на счет"),
+    ]
+
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        verbose_name="Пользователь",
+    )
+
+    payment_date = models.DateField(
+        verbose_name="Дата оплаты",
+    )
+
+    paid_course = models.ForeignKey(
+        Course,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        verbose_name="Оплаченный курс",
+    )
+
+    paid_lesson = models.ForeignKey(
+        Lesson,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        verbose_name="Оплаченный урок",
+    )
+
+    amount = models.PositiveIntegerField(
+        verbose_name="Сумма оплаты",
+    )
+
+    payment_method = models.CharField(
+        max_length=20,
+        choices=PAYMENT_METHODS,
+        default=TRANSFER,
+        verbose_name="Способ оплаты",
+    )
+
+    def __str__(self):
+        if self.paid_course:
+            return f"{self.user} - {self.paid_course}"
+        return f"{self.user} - {self.paid_lesson}"
 
