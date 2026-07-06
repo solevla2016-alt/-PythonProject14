@@ -1,5 +1,7 @@
 from django.urls import path
 
-urlpatterns = [
+from users.views import PaymentListAPIView
 
+urlpatterns = [
+    path("payments/", PaymentListAPIView.as_view(), name="payments"),
 ]
