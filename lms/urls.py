@@ -10,11 +10,19 @@ from lms.views import (
 
 from lms.views import CourseViewSet
 
+from lms.views import SubscriptionAPIView
+
+
 router = DefaultRouter()
 router.register(r"courses", CourseViewSet, basename="courses")
 
 urlpatterns = [
     path("", include(router.urls)),
+    path(
+        "subscription/",
+        SubscriptionAPIView.as_view(),
+        name="subscription",
+    ),
 ]
 
 urlpatterns += [
@@ -23,3 +31,4 @@ urlpatterns += [
     path("lessons/<int:pk>/update/", LessonUpdateAPIView.as_view()),
     path("lessons/<int:pk>/delete/", LessonDestroyAPIView.as_view()),
 ]
+
