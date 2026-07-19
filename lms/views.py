@@ -1,16 +1,24 @@
 from rest_framework import viewsets
 
-from lms.models import Course
+from lms.models import Course, Lesson, Subscription
 from lms.serializers import CourseSerializer
 
 from rest_framework import generics
 
-from lms.models import Lesson
 from lms.serializers import LessonSerializer
 
 from rest_framework.permissions import IsAuthenticated
 
-from lms.permissions import IsModerator, IsOwner
+from users.permissions import IsModerator
+from lms.permissions import IsOwner
+
+from django.shortcuts import get_object_or_404
+
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
+from lms.paginators import LMSPagination
+
 
 
 
@@ -18,6 +26,7 @@ from lms.permissions import IsModerator, IsOwner
 class LessonListCreateAPIView(generics.ListCreateAPIView):
     queryset = Lesson.objects.all()
     serializer_class = LessonSerializer
+    pagination_class = LMSPagination
 
     def get_permissions(self):
         if self.request.method == "POST":
@@ -32,9 +41,9 @@ class LessonListCreateAPIView(generics.ListCreateAPIView):
 
     def get_queryset(self):
         if self.request.user.groups.filter(name="Moderators").exists():
-            return Lesson.objects.all()
+            return Lesson.objects.all().order_by("id")
 
-        return Lesson.objects.filter(owner=self.request.user)
+        return Lesson.objects.filter(owner=self.request.user).order_by("id")
 
 
 class LessonRetrieveAPIView(generics.RetrieveAPIView):
@@ -57,6 +66,7 @@ class LessonDestroyAPIView(generics.DestroyAPIView):
 class CourseViewSet(viewsets.ModelViewSet):
     queryset = Course.objects.all()
     serializer_class = CourseSerializer
+    pagination_class = LMSPagination
 
     def get_permissions(self):
 
@@ -82,7 +92,38 @@ class CourseViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         if self.request.user.groups.filter(name="Moderators").exists():
-            return Course.objects.all()
+            return Course.objects.all().order_by("id")
 
-        return Course.objects.filter(owner=self.request.user)
+        return Course.objects.filter(owner=self.request.user).order_by("id")
+
+class SubscriptionAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        user = request.user
+        course_id = request.data.get("course_id")
+
+        course = get_object_or_404(
+            Course,
+            pk=course_id
+        )
+
+        subscription = Subscription.objects.filter(
+            user=user,
+            course=course
+        )
+
+        if subscription.exists():
+            subscription.delete()
+            message = "Подписка удалена"
+        else:
+            Subscription.objects.create(
+                user=user,
+                course=course
+            )
+            message = "Подписка добавлена"
+
+        return Response(
+            {"message": message}
+        )
 
