@@ -21,3 +21,7 @@ env/
 *.swp
 
 media/
+
+.coverage
+__pycache__/
+*.pyc
